@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thirtyml - Discover Clubs</title>
+    <!-- Use Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --purple-1: #5d496e;
+            --purple-2: #8468a3;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Tailwind colors */
+        .bg-custom-purple { background-color: var(--purple-1); }
+        .text-custom-purple { color: var(--purple-2); }
+        .hover\:bg-custom-purple-darker:hover { background-color: var(--purple-2); }
+    </style>
+    <!-- Firebase SDKs for a real-time database and authentication -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, updateDoc, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        let isAuthReady = false;
+        let userId = null;
+        let isClubOwner = false;
+
+        // Initialize Firebase
+        if (Object.keys(firebaseConfig).length > 0) {
+            setLogLevel('debug');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } else {
+            console.error("Firebase config is not available. The database features will not work.");
+        }
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                console.log("User logged in with ID:", userId);
+            } else {
+                userId = null;
+                console.log("User is logged out or not authenticated.");
+            }
+            isAuthReady = true;
+        });
+
+        window.addEventListener('load', async () => {
+            if (auth && initialAuthToken) {
+                try {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } catch (error) {
+                    console.error("Error signing in with custom token, signing in anonymously:", error);
+                    await signInAnonymously(auth);
+                }
+            } else if (auth) {
+                await signInAnonymously(auth);
+            }
+        });
+
+        const mainContent = document.getElementById('main-content');
+        const clubsContainer = document.getElementById('clubs-container');
+        const citySearchInput = document.getElementById('city-search');
+        const messageBox = document.getElementById('message-box');
+        
+        const customerLoginSection = document.getElementById('customer-login-section');
+        const customerSignupSection = document.getElementById('customer-signup-section');
+        const clubSignupSection = document.getElementById('club-signup-section');
+        const clubOwnerManagementSection = document.getElementById('club-owner-management-section');
+
+        const customerLoginEmailInput = document.getElementById('customer-login-email');
+        const customerLoginPasswordInput = document.getElementById('customer-login-password');
+        const customerLoginButton = document.getElementById('customer-login-button');
+
+        const customerSignupNameInput = document.getElementById('customer-signup-name');
+        const customerSignupEmailInput = document.getElementById('customer-signup-email');
+        const customerSignupCityInput = document.getElementById('customer-signup-city');
+        const customerSignupPasswordInput = document.getElementById('customer-signup-password');
+        const customerSignupButton = document.getElementById('customer-signup-button');
+
+        const clubSignupNameInput = document.getElementById('club-signup-name');
+        const clubSignupCityInput = document.getElementById('club-signup-city');
+        const clubSignupEmailInput = document.getElementById('club-signup-email');
+        const clubSignupPasswordInput = document.getElementById('club-signup-password');
+        const clubSignupButton = document.getElementById('club-signup-button');
+        
+        const ownerClubSelect = document.getElementById('owner-club-select');
+        const ownerRateInput = document.getElementById('owner-rate-input');
+        const saveRateButton = document.getElementById('save-rate-button');
+        const ownerInfoText = document.getElementById('owner-info-text');
+
+        const homeLink = document.getElementById('home-link');
+        const customerLoginLink = document.getElementById('customer-login-link');
+        const customerSignupLink = document.getElementById('customer-signup-link');
+        const clubSignupLink = document.getElementById('club-signup-link');
+
+        // Function to control which section is visible
+        function showView(viewName) {
+            const views = [mainContent, customerLoginSection, customerSignupSection, clubSignupSection, clubOwnerManagementSection];
+            views.forEach(view => view.classList.add('hidden'));
+
+            if (viewName === 'home') {
+                mainContent.classList.remove('hidden');
+                // Hide club owner section unless logged in as one
+                if (!isClubOwner) {
+                    clubOwnerManagementSection.classList.add('hidden');
+                } else {
+                     clubOwnerManagementSection.classList.remove('hidden');
+                }
+            } else if (viewName === 'customerLogin') {
+                customerLoginSection.classList.remove('hidden');
+            } else if (viewName === 'customerSignup') {
+                customerSignupSection.classList.remove('hidden');
+            } else if (viewName === 'clubSignup') {
+                clubSignupSection.classList.remove('hidden');
+            } else if (viewName === 'clubManagement') {
+                clubOwnerManagementSection.classList.remove('hidden');
+            }
+        }
+
+        function showMessage(text, isError = false) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
+            messageBox.classList.add('block', isError ? 'bg-red-500' : 'bg-green-500');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000); // Hide the message after 5 seconds
+        }
+
+        function createClubCard(club) {
+            const card = document.createElement('div');
+            card.className = "bg-gray-800 rounded-lg shadow-xl overflow-hidden transform transition duration-500 hover:scale-105 text-gray-200";
+            card.innerHTML = `
+                <img src="${club.image}" alt="${club.name} Club" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold mb-2">${club.name}</h3>
+                    <p class="text-gray-400 mb-4">${club.city}</p>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xl font-semibold text-custom-purple" id="rate-${club.id}">${club.rate}</span>
+                        <input type="date" class="bg-gray-700 text-gray-200 p-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-custom-purple" />
+                    </div>
+                    <button onclick="bookNow('${club.name}', '${club.city}')" class="w-full bg-custom-purple text-white px-6 py-2 rounded-full shadow-lg hover:bg-custom-purple-darker transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-purple focus:ring-opacity-50">Book Now</button>
+                </div>
+            `;
+            return card;
+        }
+
+        function renderClubs(clubs) {
+            clubsContainer.innerHTML = '';
+            if (clubs.length > 0) {
+                clubs.forEach(club => clubsContainer.appendChild(createClubCard(club)));
+            } else {
+                clubsContainer.innerHTML = `<p class="text-center text-gray-500 text-xl w-full col-span-full">No clubs found in this city.</p>`;
+            }
+        }
+
+        window.bookNow = (clubName, city) => {
+            const selectedDate = document.querySelector('input[type="date"]').value;
+            const message = `Booking confirmed for ${clubName} in ${city} on ${selectedDate || 'today'}.`;
+            showMessage(message);
+        };
+
+        citySearchInput.addEventListener('input', (e) => {
+            const searchText = e.target.value.toLowerCase().trim();
+            const allClubs = JSON.parse(clubsContainer.dataset.clubs || '[]');
+            const filtered = allClubs.filter(club => club.city.toLowerCase().includes(searchText));
+            renderClubs(filtered);
+        });
+
+        if (db) {
+            const clubsCollection = collection(db, `artifacts/${appId}/public/data/clubs`);
+            onSnapshot(clubsCollection, (snapshot) => {
+                if (!isAuthReady) return;
+                const clubsData = [];
+                snapshot.forEach(doc => {
+                    const club = doc.data();
+                    clubsData.push({ id: doc.id, ...club });
+                });
+                clubsContainer.dataset.clubs = JSON.stringify(clubsData);
+                renderClubs(clubsData);
+                
+                ownerClubSelect.innerHTML = clubsData.map(club => `<option value="${club.id}">${club.name}</option>`).join('');
+                const selectedClubId = ownerClubSelect.value;
+                const selectedClub = clubsData.find(c => c.id === selectedClubId);
+                if (selectedClub) {
+                    ownerRateInput.value = selectedClub.rate.replace('₹', '');
+                }
+
+            }, (error) => {
+                console.error("Error fetching club data:", error);
+            });
+        }
+
+        saveRateButton.addEventListener('click', async () => {
+            if (!isClubOwner) {
+                showMessage("You must be logged in as a club owner to edit rates.", true);
+                return;
+            }
+            const clubId = ownerClubSelect.value;
+            const newRate = ownerRateInput.value;
+            if (newRate.trim() === "") {
+                showMessage("Please enter a new rate.", true);
+                return;
+            }
+            try {
+                const clubDocRef = doc(db, `artifacts/${appId}/public/data/clubs`, clubId);
+                await updateDoc(clubDocRef, { rate: `₹${newRate}` });
+                showMessage("Rate updated successfully!");
+            } catch (error) {
+                console.error("Error updating document:", error);
+                showMessage("Failed to update rate. Please try again.", true);
+            }
+        });
+
+        // OTP simulation function
+        function simulateOTP(email) {
+            const otp = Math.floor(100000 + Math.random() * 900000);
+            const userOtp = prompt(`An OTP has been 'sent' to ${email}. Please enter it here to verify: (OTP: ${otp})`);
+            return userOtp == otp;
+        }
+
+        // Customer Sign-up
+        customerSignupButton.addEventListener('click', async () => {
+            const name = customerSignupNameInput.value;
+            const email = customerSignupEmailInput.value;
+            const city = customerSignupCityInput.value;
+            const password = customerSignupPasswordInput.value;
+
+            if (!name || !email || !city || !password) {
+                showMessage("Please fill in all fields to sign up.", true);
+                return;
+            }
+
+            if (simulateOTP(email)) {
+                try {
+                    const userDocRef = doc(db, `artifacts/${appId}/public/data/customers`, email);
+                    await setDoc(userDocRef, { name, email, city, password });
+                    showMessage("Account created successfully! Please log in.");
+                    showView('customerLogin');
+                } catch (error) {
+                    showMessage("Error creating account. Please try again.", true);
+                }
+            } else {
+                showMessage("Invalid OTP. Please try again.", true);
+            }
+        });
+        
+        // Customer Login
+        customerLoginButton.addEventListener('click', async () => {
+            const email = customerLoginEmailInput.value;
+            const password = customerLoginPasswordInput.value;
+
+            if (!email || !password) {
+                showMessage("Please enter both email and password.", true);
+                return;
+            }
+
+            try {
+                const userDocRef = doc(db, `artifacts/${appId}/public/data/customers`, email);
+                const docSnap = await getDoc(userDocRef);
+
+                if (docSnap.exists() && docSnap.data().password === password) {
+                    showMessage("Login successful! Welcome back.");
+                    isClubOwner = false;
+                    showView('home');
+                } else {
+                    showMessage("Invalid email or password.", true);
+                }
+            } catch (error) {
+                showMessage("Login failed. Please try again.", true);
+            }
+        });
+
+        // Club Sign-up
+        clubSignupButton.addEventListener('click', async () => {
+            const name = clubSignupNameInput.value;
+            const city = clubSignupCityInput.value;
+            const email = clubSignupEmailInput.value;
+            const password = clubSignupPasswordInput.value;
+
+            if (!name || !city || !email || !password) {
+                showMessage("Please fill in all fields to sign up.", true);
+                return;
+            }
+
+            if (simulateOTP(email)) {
+                try {
+                    const clubDocRef = doc(db, `artifacts/${appId}/public/data/clubOwners`, email);
+                    await setDoc(clubDocRef, { name, city, email, password });
+                    showMessage("Club account created successfully! Please log in.");
+                    showView('home'); // Redirects to home, they can login as a club from there
+                } catch (error) {
+                    showMessage("Error creating club account. Please try again.", true);
+                }
+            } else {
+                showMessage("Invalid OTP. Please try again.", true);
+            }
+        });
+
+        // Navigation listeners
+        homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('home'); });
+        customerLoginLink.addEventListener('click', (e) => { e.preventDefault(); showView('customerLogin'); });
+        customerSignupLink.addEventListener('click', (e) => { e.preventDefault(); showView('customerSignup'); });
+        clubSignupLink.addEventListener('click', (e) => { e.preventDefault(); showView('clubSignup'); });
+        
+        // Initial data setup for the first time the app runs
+        window.setupInitialData = async () => {
+            if (!db) {
+                showMessage("Database not connected.", true);
+                return;
+            }
+            const initialClubs = [
+                { name: "Neon Nights", city: "Delhi", rate: "₹2,000", image: "https://placehold.co/400x250/333333/FFFFFF?text=Neon+Nights" },
+                { name: "Azure Club", city: "Bangalore", rate: "₹1,800", image: "https://placehold.co/400x250/333333/FFFFFF?text=Azure+Club" },
+                { name: "Groove Lounge", city: "Hyderabad", rate: "₹1,200", image: "https://placehold.co/400x250/333333/FFFFFF?text=Groove+Lounge" },
+                { name: "Electric Ember", city: "Delhi", rate: "₹2,500", image: "https://placehold.co/400x250/333333/FFFFFF?text=Electric+Ember" },
+                { name: "Kitty Su (Delhi)", city: "Delhi", rate: "₹3,000", image: "https://placehold.co/400x250/333333/FFFFFF?text=Kitty+Su" },
+                { name: "Keya (Delhi)", city: "Delhi", rate: "₹2,800", image: "https://placehold.co/400x250/333333/FFFFFF?text=Keya" },
+                { name: "Privee", city: "Delhi", rate: "₹3,500", image: "https://placehold.co/400x250/333333/FFFFFF?text=Privee" },
+                { name: "Playboy Club", city: "Delhi", rate: "₹4,000", image: "https://placehold.co/400x250/333333/FFFFFF?text=Playboy+Club" },
+                { name: "Story Club and Lounge", city: "Delhi", rate: "₹2,700", image: "https://placehold.co/400x250/333333/FFFFFF?text=Story+Club" },
+                { name: "Toy Room (Delhi)", city: "Delhi", rate: "₹3,200", image: "https://placehold.co/400x250/333333/FFFFFF?text=Toy+Room" },
+                { name: "RSVP", city: "Delhi", rate: "₹2,900", image: "https://placehold.co/400x250/333333/FFFFFF?text=RSVP" },
+                { name: "Club BW", city: "Delhi", rate: "₹2,600", image: "https://placehold.co/400x250/333333/FFFFFF?text=Club+BW" },
+                { name: "Imperfecto Shor", city: "Delhi", rate: "₹2,400", image: "https://placehold.co/400x250/333333/FFFFFF?text=Imperfecto+Shor" },
+                { name: "The Piano Man Jazz Club", city: "Delhi", rate: "₹1,800", image: "https://placehold.co/400x250/333333/FFFFFF?text=Piano+Man+Jazz" },
+                { name: "Social Offline", city: "Delhi", rate: "₹1,700", image: "https://placehold.co/400x250/333333/FFFFFF?text=Social+Offline" },
+                { name: "ROAR Hotel Eros", city: "Delhi", rate: "₹3,800", image: "https://placehold.co/400x250/333333/FFFFFF?text=ROAR+Hotel" },
+                { name: "Key (Delhi)", city: "Delhi", rate: "₹2,500", image: "https://placehold.co/400x250/333333/FFFFFF?text=Key" },
+                { name: "House A", city: "Delhi", rate: "₹2,300", image: "https://placehold.co/400x250/333333/FFFFFF?text=House+A" },
+                { name: "Fio Cookhouse and Bar", city: "Delhi", rate: "₹3,100", image: "https://placehold.co/400x250/333333/FFFFFF?text=Fio+Cookhouse" },
+                { name: "LIT Bar & Ristorante", city: "Delhi", rate: "₹2,700", image: "https://placehold.co/400x250/333333/FFFFFF?text=LIT+Bar" },
+                { name: "The Blue Bar", city: "Delhi", rate: "₹3,300", image: "https://placehold.co/400x250/333333/FFFFFF?text=The+Blue+Bar" },
+                { name: "Bohca", city: "Delhi", rate: "₹2,600", image: "https://placehold.co/400x250/333333/FFFFFF?text=Bohca" },
+                { name: "Pass Code Only", city: "Delhi", rate: "₹3,700", image: "https://placehold.co/400x250/333333/FFFFFF?text=Pass+Code+Only" },
+                { name: "MKNY Houz", city: "Delhi", rate: "₹3,900", image: "https://placehold.co/400x250/333333/FFFFFF?text=MKNY+Houz" },
+                { name: "Dragonfly Experience", city: "Mumbai", rate: "₹4,200", image: "https://placehold.co/400x250/333333/FFFFFF?text=Dragonfly+Experience" },
+                { name: "Toy Room (Mumbai)", city: "Mumbai", rate: "₹4,500", image: "https://placehold.co/400x250/333333/FFFFFF?text=Toy+Room" },
+                { name: "R'adda", city: "Mumbai", rate: "₹2,100", image: "https://placehold.co/400x250/333333/FFFFFF?text=R'adda" },
+                { name: "Lord Of The Drinks", city: "Mumbai", rate: "₹2,800", image: "https://placehold.co/400x250/333333/FFFFFF?text=Lord+Of+The+Drinks" },
+                { name: "Slink & Bardot", city: "Mumbai", rate: "₹3,000", image: "https://placehold.co/400x250/333333/FFFFFF?text=Slink+&amp;+Bardot" },
+                { name: "Kitty Su (Mumbai)", city: "Mumbai", rate: "₹3,200", image: "https://placehold.co/400x250/333333/FFFFFF?text=Kitty+Su" },
+                { name: "The Daily All Day", city: "Mumbai", rate: "₹2,000", image: "https://placehold.co/400x250/333333/FFFFFF?text=The+Daily+All+Day" },
+                { name: "Mansion at Sahara Star", city: "Mumbai", rate: "₹3,500", image: "https://placehold.co/400x250/333333/FFFFFF?text=Mansion+at+Sahara+Star" },
+                { name: "antiSOCIAL", city: "Mumbai", rate: "₹1,900", image: "https://placehold.co/400x250/333333/FFFFFF?text=antiSOCIAL" }
+            ];
+            for (const club of initialClubs) {
+                const docRef = doc(db, `artifacts/${appId}/public/data/clubs`, club.name.replace(/\s+/g, '-').toLowerCase());
+                await setDoc(docRef, club, { merge: true });
+            }
+            showMessage("Initial data loaded. Please refresh the page.");
+        };
+
+        ownerClubSelect.addEventListener('change', (e) => {
+            const selectedClubId = e.target.value;
+            const allClubs = JSON.parse(clubsContainer.dataset.clubs || '[]');
+            const selectedClub = allClubs.find(c => c.id === selectedClubId);
+            if (selectedClub) {
+                ownerRateInput.value = selectedClub.rate.replace('₹', '');
+            }
+        });
+    </script>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col items-center">
+
+    <header class="w-full bg-gray-800 shadow-lg p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-3xl font-extrabold text-custom-purple">Thirtyml</h1>
+            <nav class="flex items-center gap-4">
+                <a href="#" id="home-link" class="text-gray-400 hover:text-custom-purple px-3 py-2 rounded-lg transition duration-300">Home</a>
+                <a href="#contact-us-section" class="text-gray-400 hover:text-custom-purple px-3 py-2 rounded-lg transition duration-300">Contact Us</a>
+                <a href="#" id="club-signup-link" class="bg-custom-purple text-white px-4 py-2 rounded-lg shadow-md hover:bg-custom-purple-darker transition duration-300">Club Sign Up</a>
+                <a href="#" id="customer-login-link" class="bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition duration-300">Customer Login</a>
+                <a href="#" id="customer-signup-link" class="bg-gray-700 text-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-600 transition duration-300">Customer Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 flex-grow w-full">
+        <div id="message-box" class="hidden mb-6 p-4 rounded-lg text-center text-white font-semibold transition-all duration-300 ease-in-out"></div>
+        
+        <!-- Main Content Section -->
+        <div id="main-content">
+            <h2 class="text-4xl font-extrabold text-center text-gray-100 mb-8">Discover and Book Your Night Out</h2>
+            <div class="w-full max-w-lg mx-auto">
+                <input type="text" id="city-search" placeholder="Search by city..." class="w-full p-3 mb-6 bg-gray-800 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+            </div>
+            <div id="clubs-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-clubs="[]"></div>
+        </div>
+
+        <!-- Customer Login Section -->
+        <section id="customer-login-section" class="hidden bg-gray-800 rounded-xl shadow-lg p-6 mb-8 text-center max-w-lg mx-auto">
+            <h3 class="text-xl font-bold mb-4 text-custom-purple">Login as a Customer</h3>
+            <div class="flex flex-col gap-4">
+                <input type="email" id="customer-login-email" placeholder="Email" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="password" id="customer-login-password" placeholder="Password" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <button id="customer-login-button" class="bg-custom-purple text-white px-6 py-3 rounded-lg shadow-lg hover:bg-custom-purple-darker transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-purple focus:ring-opacity-50 font-bold">Login</button>
+            </div>
+        </section>
+
+        <!-- Customer Sign-up Section -->
+        <section id="customer-signup-section" class="hidden bg-gray-800 rounded-xl shadow-lg p-6 mb-8 text-center max-w-lg mx-auto">
+            <h3 class="text-xl font-bold mb-4 text-custom-purple">Sign Up as a Customer</h3>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="customer-signup-name" placeholder="Name" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="email" id="customer-signup-email" placeholder="Email" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="text" id="customer-signup-city" placeholder="City" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="password" id="customer-signup-password" placeholder="Password" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <button id="customer-signup-button" class="bg-custom-purple text-white px-6 py-3 rounded-lg shadow-lg hover:bg-custom-purple-darker transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-purple focus:ring-opacity-50 font-bold">Sign Up</button>
+            </div>
+        </section>
+
+        <!-- Club Sign-up Section -->
+        <section id="club-signup-section" class="hidden bg-gray-800 rounded-xl shadow-lg p-6 mb-8 text-center max-w-lg mx-auto">
+            <h3 class="text-xl font-bold mb-4 text-custom-purple">Sign Up Your Club</h3>
+            <p class="text-gray-400 mb-4 text-sm">Once verified, you will be able to manage your club's information and rates.</p>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="club-signup-name" placeholder="Club Name" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="text" id="club-signup-city" placeholder="City" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="email" id="club-signup-email" placeholder="Club Email" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <input type="password" id="club-signup-password" placeholder="Password" class="w-full p-3 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                <button id="club-signup-button" class="bg-custom-purple text-white px-6 py-3 rounded-lg shadow-lg hover:bg-custom-purple-darker transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-purple focus:ring-opacity-50 font-bold">Sign Up Club</button>
+            </div>
+        </section>
+
+        <!-- Club Owner Management Section (originally Club Owner Section) -->
+        <section id="club-owner-management-section" class="hidden bg-gray-800 rounded-xl shadow-lg p-6 mb-8 text-center max-w-2xl mx-auto">
+            <h3 class="text-xl font-bold mb-2 text-custom-purple">Club Owners: Edit Your Entry Rates</h3>
+            <p id="owner-info-text" class="text-gray-400 mb-4 text-sm">Please select a club and edit the rate below. Your changes will update in real-time for everyone.</p>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                <select id="owner-club-select" class="w-full md:w-auto p-3 bg-gray-700 text-gray-200 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-custom-purple"></select>
+                <div class="relative w-full md:w-auto">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                    <input type="number" id="owner-rate-input" placeholder="New Rate" class="w-full p-3 pl-8 bg-gray-700 text-gray-200 border border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-custom-purple">
+                </div>
+                <button id="save-rate-button" class="w-full md:w-auto bg-custom-purple text-white px-6 py-3 rounded-lg shadow-lg hover:bg-custom-purple-darker transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-custom-purple focus:ring-opacity-50 font-bold">Save Rate</button>
+            </div>
+            <p class="mt-4 text-xs text-gray-500">
+                <span class="font-bold">First time here?</span> Run `setupInitialData()` in the browser console to load some demo clubs.
+            </p>
+        </section>
+
+        ---
+        
+        <!-- Contact Us Section -->
+        <section id="contact-us-section" class="bg-gray-800 rounded-xl shadow-lg p-8 my-8 max-w-4xl mx-auto">
+            <h2 class="text-3xl font-extrabold text-center text-custom-purple mb-6">Contact Us</h2>
+            <div class="text-center text-lg text-gray-300 space-y-2">
+                <p>Email: <a href="mailto:30ml@gmail.com" class="text-custom-purple hover:underline">30ml@gmail.com</a></p>
+                <p>Address: Agra, Uttar Pradesh</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="w-full bg-gray-800 text-gray-400 text-center p-4 mt-8">
+        <p>&copy; 2024 Thirtyml. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>
