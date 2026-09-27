@@ -157,9 +157,30 @@ the original brief. Work phases in order; keep this file updated.
   (confirmation with bookings, codes, payment summary, invoice link),
   `/orders/[id]/invoice` (print-friendly tax invoice).
 
+### Phase 7 — Post-purchase ✅
+- `/bookings` (Upcoming / Past / Cancelled tabs) and `/bookings/[id]` — QR
+  ticket rendered server-side from an unguessable signed token, booking
+  code, guests admitted counter, directions/calendar/call CTAs.
+- `/api/bookings/[id]/calendar` returns a .ics with IST times so the night
+  drops straight into Apple/Google/Outlook.
+- `src/lib/cancellation.ts`: `quoteCancellation` reads each product-type's
+  policy from `clubs.cancellation_policy` (`non_refundable` |
+  `full_until_hours` | `partial(refund_bps, hours)` | `reschedule_only`),
+  computes the refund itemised, and blocks after night-start. `cancelBooking`
+  atomically claims the row, voids the ticket, refunds via Razorpay to the
+  original method or as instant wallet credit, and queues in-app + email
+  notifications. `cancelNight` (for club/admin) issues full refunds for
+  everyone and shuts the night — audit-logged.
+- `CancelPanel` shows the quote before confirm; Raise-an-issue opens a
+  `support_tickets` row so the customer can reach us from the ticket page.
+- `/notifications`: in-app bell view (mark-all-read) + preferences matrix
+  (email/WhatsApp per category — transactional messages stay on always).
+- `/wallet`: ledger-based balance (unexpired credits + all debits), 30-day
+  expiry banner, full history with typed labels.
+
 ## Current phase
 
-### Phase 7 — Post-purchase (in progress)
+### Phase 8 — Partner dashboard (in progress)
 
 ## Open TODOs
 - Real MSG91 provider (SMS/WhatsApp) — mock in use until DLT/WABA setup.
