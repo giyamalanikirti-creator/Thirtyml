@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:test": "scripts/db-test.sh",
-    "db:types": "scripts/db-types.sh"
+    "db:types": "scripts/db-types.sh",
+    "simulate:prices": "node scripts/simulate-prices.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -23,11 +24,13 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.88.0",
+    "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5",
@@ -35,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22.20.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",

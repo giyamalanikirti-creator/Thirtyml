@@ -2683,6 +2683,29 @@ export type Database = {
         Args: { p_date: string; p_product_id: string }
         Returns: number
       }
+      catalog_prices: {
+        Args: { p_date: string; p_product_ids: string[] }
+        Returns: {
+          available: number
+          price: number
+          price_updated_at: string
+          product_id: string
+        }[]
+      }
+      city_price_board: {
+        Args: { p_city_slug: string; p_date: string }
+        Returns: {
+          area_name: string
+          club_id: string
+          club_name: string
+          club_slug: string
+          is_open: boolean
+          lat: number
+          lng: number
+          min_price: number
+          price_updated_at: string
+        }[]
+      }
       current_role_is: { Args: { target: string }; Returns: boolean }
       dearmor: { Args: { "": string }; Returns: string }
       effective_price: {

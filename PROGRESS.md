@@ -87,9 +87,31 @@ the original brief. Work phases in order; keep this file updated.
 - Everything degrades gracefully without Supabase keys (explanatory notice
   instead of forms), so the app still runs with zero config.
 
+### Phase 4 — Discovery ✅
+- Data layer `src/lib/data/`: typed catalogue reads (cities, price board,
+  clubs with filters/sort, club detail, events, event detail) backed by
+  Supabase under RLS, with demo fixtures mirroring the seed when keys are
+  absent. New migration adds `catalog_prices` and `city_price_board` RPCs so
+  the UI always prices through `effective_price`.
+- Live pricing: `useLivePrices` + `useLiveBoard` hooks subscribe to Realtime
+  on products/price_overrides/nights and re-fetch via the RPCs (server stays
+  the source of truth). `npm run simulate:prices` nudges prices every 20s.
+- Pages: home (city-aware live board + rails + partner CTA), `/[city]`
+  landing, `/[city]/clubs/[slug]` (gallery placeholder, date strip for 14
+  nights, sticky live price panel with quantity steppers, sparkline,
+  amenities/hours/rules, events, map, reviews, unclaimed badge + claim link,
+  NightClub JSON-LD), `/[city]/events/[slug]` (lineup, phased tiers filtered
+  by sales window, Event JSON-LD), `/clubs` (URL-synced filters + split
+  Leaflet map with price-pill pins), `/events` (city chips), `/map`
+  (full-screen dark map), `/search`, `/favorites` (RLS-scoped), `/offers`,
+  `/for-clubs`, `/about`, `/contact`, `/help`, `/legal/*` baseline drafts
+  (counsel review tracked for launch).
+- Leaflet loads dynamically (client-only); price pins are sodium pills.
+- Add-to-cart posts to `/api/cart` — implemented next in Phase 5.
+
 ## Current phase
 
-### Phase 4 — Discovery (in progress)
+### Phase 5 — Cart & checkout (in progress)
 
 ## Open TODOs
 - Real Razorpay / Resend / MSG91 providers behind the interfaces (phase 6).
