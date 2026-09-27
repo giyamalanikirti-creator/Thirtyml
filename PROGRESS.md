@@ -178,9 +178,49 @@ the original brief. Work phases in order; keep this file updated.
 - `/wallet`: ledger-based balance (unexpired credits + all debits), 30-day
   expiry banner, full history with typed labels.
 
+### Phase 8 — Partner dashboard ✅
+- `/partner` routes bounce single-club members straight into their club and
+  render a club picker for the rest; new arrivals land on `/partner/apply`.
+- Dashboard shell nests everything under `/partner/[club]/…` with a role-
+  filtered sidebar (owner/manager/door_staff/finance) and a club switcher,
+  so a partner staffing multiple venues can flip without losing context.
+- **Overview** shows tonight's bookings, expected guests, admitted, revenue,
+  and the live entry prices (PriceTag, updated timestamp).
+- **Pricing** is the whole product's premise: inline price/capacity/active
+  edits with bulk "+₹500 all"/"−₹500 all"/reset, a customer-view toggle,
+  save-under-the-hood via `savePrices` (audit-logged); scheduled rules
+  (day-of-week + start time → price) and a live price-history feed
+  showing manual/rule/tier_switch entries; add-entry-product inline form.
+- **Floor plan** editor: SVG grid, drag-to-place tables (position saved on
+  release), add-table form; **customer table picker** at
+  `/[city]/clubs/[slug]/tables` renders the same layout with avail/held/
+  booked states (colour + label + crossed line — never colour alone) and
+  posts the table's product into the cart.
+- **Events**: create draft events, add ticket tiers (price + capacity +
+  sales window), publish/unpublish; **customer event page** already
+  filters tiers by sales window.
+- **Bookings / guest list** with date+search filter and CSV export at
+  `/api/partner/[club]/bookings/export`.
+- **Check-in**: `html5-qrcode` camera scanner + manual code entry, per-
+  scan guest count, dedup lock (3s per token), haptic feedback, huge
+  green/red result banner with booking code, name and remaining count;
+  server action validates club + date + status + remaining capacity and
+  flips booking → checked_in.
+- **Profile**: description, address, website/Instagram, phone, dress
+  code, min age, house rules, guest-name policy, booking cutoff, and a
+  draggable Leaflet pin that saves the exact lat/lng.
+- **Team** (owner only): invite by email (existing account required),
+  role picker, remove; **Promo codes** (owner/manager): club-funded
+  coupons with type, cap, min cart, live redemption count; **Payouts**
+  (owner/finance): Razorpay Route account status, upcoming/completed
+  settlements with commission + refunds broken out.
+- **Analytics**: last-30-day revenue, bookings, AOV and a
+  day-of-week revenue bar chart; **Settings** links to the profile-level
+  toggles (deeper knobs land in Phase 10).
+
 ## Current phase
 
-### Phase 8 — Partner dashboard (in progress)
+### Phase 9 — Admin & launch readiness (in progress)
 
 ## Open TODOs
 - Real MSG91 provider (SMS/WhatsApp) — mock in use until DLT/WABA setup.
