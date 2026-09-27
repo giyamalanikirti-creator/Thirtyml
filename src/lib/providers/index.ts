@@ -2,6 +2,8 @@ import "server-only";
 
 import type { EmailProvider, PaymentsProvider, SmsProvider } from "./types";
 import { mockEmail, mockPayments, mockSms } from "./mock";
+import { razorpayPayments } from "./razorpay";
+import { resendEmail } from "./resend";
 
 /**
  * Provider factories. Real implementations (Razorpay, Resend, MSG91) are
@@ -14,16 +16,14 @@ export function getPaymentsProvider(): PaymentsProvider {
   const mode = process.env.PAYMENTS_MODE ?? "test";
   if (mode === "disabled") return mockPayments;
   if (process.env.RAZORPAY_KEY_SECRET && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
-    // TODO(phase 6): return the real Razorpay provider.
-    return mockPayments;
+    return razorpayPayments;
   }
   return mockPayments;
 }
 
 export function getEmailProvider(): EmailProvider {
   if (process.env.RESEND_API_KEY) {
-    // TODO(phase 6): return the real Resend provider.
-    return mockEmail;
+    return resendEmail;
   }
   return mockEmail;
 }

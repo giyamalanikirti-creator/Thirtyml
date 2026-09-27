@@ -131,12 +131,38 @@ the original brief. Work phases in order; keep this file updated.
 - New migration revokes execute on state-changing/privileged functions from
   client roles (service-role only).
 
+### Phase 6 — Payments ✅
+- Real providers wired behind the interfaces: Razorpay over REST (orders
+  with idempotency keys, HMAC payment + webhook signature verification with
+  timing-safe compares, refunds, payment status) and Resend for email; mocks
+  still cover keyless dev, including a simulated payment that exercises the
+  full confirm path with a real HMAC.
+- `src/lib/payments.ts`: `ensureGatewayOrder` (idempotent per order),
+  `finalizeOrderPaid` — an atomic pending→paid claim, then bookings per
+  club+night, lead guest, QR tickets (unguessable tokens), coupon
+  redemption, wallet debit ledger row, per-FY sequential invoice, hold
+  release, cart clear, and outbox notifications. Callback and webhook can
+  arrive in any order; duplicates no-op. `reconcilePendingOrders` resolves
+  stragglers.
+- Routes: `/api/payments/create`, `/api/payments/confirm` (server-verified
+  signature, no client-trusted amounts), `/api/webhooks/razorpay`
+  (signature + unique event-id idempotency, 500 → gateway retry),
+  `/api/jobs?task=reconcile|notifications|expire-holds` guarded by
+  CRON_SECRET (timing-safe).
+- `src/lib/notifications.ts`: outbox queueing + processor (email/WhatsApp/
+  SMS via providers, attempts + failure capture; in-app rows read directly).
+- Pages: `/orders/[id]/pay` (10-min countdown, Razorpay Checkout.js or
+  simulated payment; expiry state with restart), `/orders/[id]/status`
+  (polls; safe if the tab was closed mid-payment), `/orders/[id]`
+  (confirmation with bookings, codes, payment summary, invoice link),
+  `/orders/[id]/invoice` (print-friendly tax invoice).
+
 ## Current phase
 
-### Phase 6 — Payments (in progress)
+### Phase 7 — Post-purchase (in progress)
 
 ## Open TODOs
-- Real Razorpay / Resend / MSG91 providers behind the interfaces (phase 6).
+- Real MSG91 provider (SMS/WhatsApp) — mock in use until DLT/WABA setup.
 - Phone OTP delivery: Supabase Auth needs its "Send SMS" hook pointed at an
   MSG91 edge function in production (local Supabase logs OTPs). Document in
   LAUNCH.md.
