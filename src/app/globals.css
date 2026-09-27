@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* ThirtyML design tokens — see DESIGN.md */
+:root {
+  --night: #0d1120;
+  --night-raised: #161b2e;
+  --aubergine: #241a33;
+  --sodium: #f7a521;
+  --sodium-deep: #d98a0f;
+  --dusk: #6fa8c9;
+  --moon: #f2efe6;
+  --moon-dim: #9ca1b5;
+  --line: #2a3048;
+  --rise: #ff7a6b;
+  --drop: #5bd592;
+  --danger: #f0564a;
+}
+
+@theme inline {
+  --color-night: var(--night);
+  --color-night-raised: var(--night-raised);
+  --color-aubergine: var(--aubergine);
+  --color-sodium: var(--sodium);
+  --color-sodium-deep: var(--sodium-deep);
+  --color-dusk: var(--dusk);
+  --color-moon: var(--moon);
+  --color-moon-dim: var(--moon-dim);
+  --color-line: var(--line);
+  --color-rise: var(--rise);
+  --color-drop: var(--drop);
+  --color-danger: var(--danger);
+
+  --font-display: var(--font-bricolage), ui-sans-serif, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+body {
+  background: var(--night);
+  color: var(--moon);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11";
+}
+
+/* All prices: tabular numerals, always */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Visible focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--sodium);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sodium) 35%, transparent);
+}
+
+/* Split-flap price flip */
+@keyframes flap {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  49% {
+    transform: rotateX(88deg);
+    opacity: 0.4;
+  }
+  51% {
+    transform: rotateX(-88deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.price-flip {
+  display: inline-block;
+  animation: flap 350ms ease-in-out;
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+@keyframes price-pulse {
+  0% {
+    background-color: color-mix(in srgb, var(--sodium) 30%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-flip {
+    animation: price-pulse 600ms ease-out;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .price-flip {
+    animation: none;
+  }
+}
