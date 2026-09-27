@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "db:test": "scripts/db-test.sh",
     "db:types": "scripts/db-types.sh",
-    "simulate:prices": "node scripts/simulate-prices.mjs"
+    "simulate:prices": "node scripts/simulate-prices.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -20,6 +21,8 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "@tanstack/react-query": "^5.103.1",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -39,6 +42,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^22.20.3",

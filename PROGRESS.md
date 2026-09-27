@@ -218,9 +218,51 @@ the original brief. Work phases in order; keep this file updated.
   day-of-week revenue bar chart; **Settings** links to the profile-level
   toggles (deeper knobs land in Phase 10).
 
+### Phase 9 — Admin & launch readiness ✅
+- **Admin dashboard** at `/admin` with role-filtered sidebar (super_admin
+  gets everything, support_agent gets Orders and Refunds only).
+- **Dashboard**: GMV, orders, refunds, unprocessed webhooks, recent orders
+  feed. **Clubs**: filter by status, approve/suspend/feature (all
+  audit-logged). **Applications**: approve/reject/needs-info from the
+  partner_applications queue. **Orders**: search by id/phone/email/name;
+  order detail shows line items, bookings, payments, refunds, totals, plus
+  actions to issue a partial/full refund via Razorpay or wallet, and to
+  resend the ticket. **Refunds**: chronological queue. **Coupons**: create
+  platform-funded coupons; per-code redemption count and total cost.
+  **Users**: search directory with role badges. **Settings**: editable
+  `platform_settings` JSON with before/after audit logging. **Audit log**:
+  200 latest actor+action+entity entries.
+- Every admin write goes through the service role after `requireAdmin` and
+  writes an `audit_logs` row.
+- **Security hardening**: `next.config.ts` sets CSP (Supabase, Razorpay,
+  Cloudflare, OSM/carto tiles, Sentry, PostHog), HSTS with preload, X-Frame
+  DENY, X-Content-Type-Options, Referrer-Policy, tight Permissions-Policy,
+  no `X-Powered-By`. Distributed rate limits via Upstash
+  (`src/lib/rate-limit.ts`) already gate `/api/payments/create` and
+  `/partner/apply`; Turnstile verification (`src/lib/turnstile.ts`) fires
+  automatically when the secret is set.
+- **Cookie consent** banner with `useSyncExternalStore` gates analytics,
+  writes `tml_cookie_consent`, dispatches a `thirtyml:consent-granted`
+  event.
+- **SEO/PWA**: `sitemap.ts` enumerates cities/clubs/events, `robots.ts`
+  disallows private routes and points to the sitemap, `manifest.ts` gives
+  the standalone PWA a name/icon/theme; JSON-LD is already on the club and
+  event pages.
+- **Cron**: `vercel.json` schedules `expire-holds` and `notifications`
+  every minute and `reconcile` every 15 minutes against the CRON_SECRET
+  guarded `/api/jobs` route.
+- **Playwright** scaffold with smoke tests for the home / club page /
+  legal pages; stubs describe the ten acceptance tests waiting for a
+  staging Supabase project.
+- **LAUNCH.md**: exhaustive go-live checklist (technical + business),
+  updated as we go.
+
 ## Current phase
 
-### Phase 9 — Admin & launch readiness (in progress)
+### Launch prep
+
+All MVP phases (1–9) complete. Growth (phase 10) and extras (phase 11) are
+post-launch.
 
 ## Open TODOs
 - Real MSG91 provider (SMS/WhatsApp) — mock in use until DLT/WABA setup.

@@ -1,0 +1,16 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "ThirtyML",
+    short_name: "ThirtyML",
+    description: "Nightlife booking at live prices.",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#0d1120",
+    theme_color: "#0d1120",
+    icons: [
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+    ],
+  };
+}

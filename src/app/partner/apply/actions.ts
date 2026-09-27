@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { supabaseServer, isSupabaseConfigured } from "@/lib/supabase/server";
 import { emailSchema, phoneSchema } from "@/lib/validation/auth";
+import { allow } from "@/lib/rate-limit";
 
 const applySchema = z.object({
   clubName: z.string().trim().min(2).max(120),
@@ -19,6 +20,9 @@ export async function submitApplication(
   const parsed = applySchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
+  }
+  if (!(await allow("partner-apply", { limit: 5, window: "1 h" }, parsed.data.contactPhone))) {
+    return { ok: false, error: "Too many applications, please try later" };
   }
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Applications aren't open in this environment" };
