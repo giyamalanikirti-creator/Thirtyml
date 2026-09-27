@@ -31,9 +31,47 @@ the original brief. Work phases in order; keep this file updated.
   build). Old Firebase prototype preserved at
   `docs/legacy/prototype-firebase.html`; Jekyll workflow removed.
 
+### Phase 2 — Database ✅
+- 11 migrations in `supabase/migrations/` (one concern each): extensions +
+  role helpers, core (profiles/cities/clubs/members/hours/photos/amenities/
+  genres), catalogue (events/products/price overrides/rules/history/nights/
+  floor plans/tables), commerce (carts/coupons/orders/bookings/tickets/
+  check-ins/inventory_holds), payments (payments/webhook_events/refunds/
+  invoices with per-FY sequential numbers/payout accounts/payouts/settlement
+  lines), offers+wallet (ledger-based), engagement (favorites/alerts/
+  waitlist/reviews with rating trigger/recently viewed), ops (notification
+  outbox/support/CMS/applications/claims/platform_settings/feature
+  flags/audit log), pricing functions, RLS, realtime + pg_cron.
+- Money is bigint paise everywhere. Every FK and common filter is indexed.
+- `effective_price(product, date, at)`: override → day-of-week/time rule
+  (tonight only) → base; event tiers are products so tier price = base.
+  `available_quantity` = capacity − paid items − live holds. `place_hold`
+  serialises per product+night via advisory xact lock — no overselling.
+  `expire_stale_holds` + `apply_due_price_rules` run via pg_cron (guarded so
+  plain Postgres skips scheduling). Price changes auto-log to
+  `price_history` via trigger; tampering can't skip it.
+- RLS on every table; finance tables (orders/payments/payouts/wallet writes
+  etc.) have no client policies — service-role only. Tests in
+  `supabase/tests/rls.test.sql` prove: anon sees catalogue only; customer A
+  can't see customer B's orders/wallet; club B can't read club A's bookings
+  or reprice its products; door staff can see bookings but not edit prices
+  or payouts; overrides beat base price; the last table can't be double-held
+  (sold_out); expiry frees inventory and expires the pending order; invoice
+  numbers are sequential per financial year; rating trigger works.
+- `scripts/db-test.sh` runs shim + migrations + seed + tests on a throwaway
+  DB (local socket or ADMIN_URL for CI — wired into GitHub Actions).
+- `supabase/seed.sql` (dev/staging only): 3 cities, 10 demo clubs
+  (approximate coords, unclaimed), entry products per club, floor plans +
+  tables for the big rooms, 4 events with tiers, nights for 14 days, price
+  history for sparklines, FIRSTNIGHT/AGRA100 coupons, demo accounts
+  (`*@thirtyml.dev` / `ThirtyML-demo-1`).
+- `src/lib/database.types.ts` generated from the real schema
+  (`scripts/db-types.sh` regenerates; falls back to postgres-meta when
+  Docker is unavailable).
+
 ## Current phase
 
-### Phase 2 — Database (in progress)
+### Phase 3 — Auth & accounts (in progress)
 
 ## Open TODOs
 - Real Razorpay / Resend / MSG91 providers behind the interfaces (phases 3/6).

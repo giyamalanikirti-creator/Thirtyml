@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:test": "scripts/db-test.sh",
+    "db:types": "scripts/db-types.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
