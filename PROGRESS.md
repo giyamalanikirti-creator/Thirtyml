@@ -69,12 +69,35 @@ the original brief. Work phases in order; keep this file updated.
   (`scripts/db-types.sh` regenerates; falls back to postgres-meta when
   Docker is unavailable).
 
+### Phase 3 — Auth & accounts ✅
+- Supabase clients: browser (`lib/supabase/client.ts`), request-scoped server
+  client + service-role admin client (`lib/supabase/server.ts`, server-only).
+- `src/middleware.ts` routes by session/role (customer, partner, admin) and
+  refreshes auth cookies; `src/lib/auth.ts` provides the real guards
+  (`requireUser`, `requireRole`, `requireClubRole`, `getMemberships`) used by
+  every server action — middleware is never trusted alone.
+- `/login`, `/signup`: phone OTP (primary), email+password, magic link,
+  Google OAuth; `/reset-password` (request + update stages);
+  `/auth/callback` code exchange. `/partner/login` (visually distinct) and
+  `/partner/apply` (creates `partner_applications`).
+- `/account`: profile form (name/DOB/gender/home city, zod-validated server
+  action), verified-contacts panel, sign out all devices, DPDP data export
+  (JSON download of own rows under RLS), soft account deletion (anonymise +
+  auth ban via service role, audit-logged).
+- Everything degrades gracefully without Supabase keys (explanatory notice
+  instead of forms), so the app still runs with zero config.
+
 ## Current phase
 
-### Phase 3 — Auth & accounts (in progress)
+### Phase 4 — Discovery (in progress)
 
 ## Open TODOs
-- Real Razorpay / Resend / MSG91 providers behind the interfaces (phases 3/6).
+- Real Razorpay / Resend / MSG91 providers behind the interfaces (phase 6).
+- Phone OTP delivery: Supabase Auth needs its "Send SMS" hook pointed at an
+  MSG91 edge function in production (local Supabase logs OTPs). Document in
+  LAUNCH.md.
+- Profile-completion nudge after first sign-in (fields exist on /account;
+  a forced redirect flow is still TODO).
 - GST rates in `platform_settings` must be confirmed with a CA before launch.
 - Sentry release tracking / source maps need `SENTRY_AUTH_TOKEN` at build
   (deferred to phase 9 deploy setup).
