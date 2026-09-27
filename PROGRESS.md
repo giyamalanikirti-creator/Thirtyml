@@ -109,9 +109,31 @@ the original brief. Work phases in order; keep this file updated.
 - Leaflet loads dynamically (client-only); price pins are sodium pills.
 - Add-to-cart posts to `/api/cart` — implemented next in Phase 5.
 
+### Phase 5 — Cart & checkout ✅
+- `src/lib/cart.ts`: server-side cart. DB-backed (user carts + anonymous
+  carts under a signed cookie token, merged on login; 24h/past-date expiry;
+  live prices via `catalog_prices`; price-change detection with explicit
+  acknowledgement) with a signed-cookie fallback against the demo catalogue
+  when Supabase keys are absent. `/api/cart` POST/GET for the price panels.
+- `/cart`: grouped by club+night, steppers, remove, save for later,
+  price-change banners requiring "Okay, use the new prices" before checkout,
+  estimated total.
+- `src/lib/pricing.ts`: fee/tax settings from `platform_settings`,
+  convenience fee (flat/percent/both with min/max), GST on fee, full coupon
+  validation (dates, days, scope, limits, first-booking), wallet cap logic.
+  Unit-tested.
+- `/checkout`: review (locked lines), lead guest details (prefilled),
+  coupon apply with live breakdown, wallet toggle, terms checkbox, light
+  calm summary card, "Pay ₹X". `submitCheckout` → `createOrderFromCart`
+  (service role): recomputes everything, snapshots order_items, places
+  10-minute holds via `place_hold` (advisory-locked), aborts cleanly on
+  sold-out. Redirects to `/orders/[id]/pay` (Phase 6).
+- New migration revokes execute on state-changing/privileged functions from
+  client roles (service-role only).
+
 ## Current phase
 
-### Phase 5 — Cart & checkout (in progress)
+### Phase 6 — Payments (in progress)
 
 ## Open TODOs
 - Real Razorpay / Resend / MSG91 providers behind the interfaces (phase 6).
