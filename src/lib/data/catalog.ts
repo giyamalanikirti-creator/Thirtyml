@@ -127,6 +127,7 @@ export async function listClubs(filters: ClubFilters): Promise<ClubSummary[]> {
       minPrice: b?.minPrice ?? null,
       priceUpdatedAt: b?.priceUpdatedAt ?? null,
       openTonight: b?.isOpen ?? true,
+      imageUrl: null,
     };
   });
 
@@ -283,6 +284,7 @@ export async function getClubDetail(
       : null,
     priceUpdatedAt: entryProducts[0]?.priceUpdatedAt ?? null,
     openTonight: night?.is_open ?? true,
+    imageUrl: null,
     description: c.description,
     address: c.address,
     websiteUrl: c.website_url,

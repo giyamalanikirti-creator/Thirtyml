@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Star, MapPin, Globe, AtSign, Share2 } from "lucide-react";
@@ -89,11 +90,21 @@ export default async function ClubPage({
           / {club.name}
         </nav>
 
-        <div
-          aria-hidden
-          className="mt-4 h-52 rounded-lg sm:h-64"
-          style={{ background: clubGradient(club.slug) }}
-        />
+        <div className="relative mt-4 h-56 overflow-hidden rounded-xl sm:h-72">
+          {club.imageUrl ? (
+            <Image
+              src={club.imageUrl}
+              alt={club.name}
+              fill
+              priority
+              sizes="(min-width: 1024px) 72rem, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            <div aria-hidden className="absolute inset-0" style={{ background: clubGradient(club.slug) }} />
+          )}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-night via-night/40 to-transparent" />
+        </div>
 
         <div className="mt-6 flex flex-col gap-8 lg:flex-row">
           <div className="min-w-0 flex-1">

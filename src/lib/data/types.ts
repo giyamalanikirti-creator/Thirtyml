@@ -30,6 +30,8 @@ export interface ClubSummary {
   minPrice: number | null;
   priceUpdatedAt: string | null;
   openTonight: boolean;
+  /** Hero photo URL; falls back to generated gradient if null. */
+  imageUrl?: string | null;
 }
 
 export interface ProductInfo {

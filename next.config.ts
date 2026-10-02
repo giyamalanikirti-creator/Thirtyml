@@ -19,7 +19,7 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
  */
 const csp = [
   "default-src 'self'",
-  `img-src 'self' data: blob: https://${supabaseHost} https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com`,
+  `img-src 'self' data: blob: https://${supabaseHost} https://images.unsplash.com https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com`,
   `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://api.razorpay.com https://challenges.cloudflare.com https://*.ingest.sentry.io https://*.i.posthog.com`,
   "font-src 'self' data: https://fonts.gstatic.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -37,6 +37,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
     ],
   },
   async headers() {

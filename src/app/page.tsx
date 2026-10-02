@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cookies } from "next/headers";
+import { ArrowRight, Zap, Lock, QrCode } from "lucide-react";
 import { Header } from "@/components/shell/header";
 import { Footer } from "@/components/shell/footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,57 +34,97 @@ export default async function Home() {
     listEvents(city),
   ]);
 
+  const heroClub = clubs.find((c) => c.imageUrl) ?? clubs[0];
+
   return (
     <>
       <Header city={city} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4">
-        <section className="py-10 sm:py-14">
-          <p className="text-sm text-moon-dim">
-            Tonight in {cityName} ·{" "}
-            {new Intl.DateTimeFormat("en-IN", {
-              weekday: "long",
-              day: "numeric",
-              month: "short",
-              timeZone: "Asia/Kolkata",
-            }).format(new Date())}
-          </p>
-          <h1 className="mt-1 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            The night, priced live.
-          </h1>
-          <p className="mt-3 max-w-xl text-moon-dim">
-            Clubs set their own prices in real time. What you see is what you
-            pay — entry, tables and event tickets, locked the moment you check
-            out.
-          </p>
+        {/* HERO ---------------------------------------------------------- */}
+        <section className="relative overflow-hidden rounded-xl border border-line bg-aubergine/40 pt-10 sm:pt-14">
+          {heroClub?.imageUrl && (
+            <>
+              <Image
+                src={heroClub.imageUrl}
+                alt=""
+                fill
+                priority
+                sizes="(min-width: 1024px) 72rem, 100vw"
+                className="absolute inset-0 -z-10 object-cover opacity-25"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10 bg-gradient-to-tr from-night via-night/70 to-transparent"
+              />
+            </>
+          )}
+          <div className="relative mx-auto max-w-2xl px-6 pb-14 sm:px-10 sm:pb-20">
+            <Badge variant="sodium" className="mb-4">
+              <span className="live-dot inline-block h-1.5 w-1.5 rounded-full bg-plum-bright" />
+              Live in {cityName} tonight
+            </Badge>
+            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+              The night, <span className="text-plum-bright">priced live.</span>
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-moon-dim sm:text-lg">
+              Clubs set their own prices in real time. See what you&apos;ll pay
+              before you leave the house — entry, tables and event tickets,
+              locked the moment you check out.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href="/clubs"
+                className={buttonVariants({ variant: "primary", size: "lg" })}
+              >
+                Explore clubs <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/events"
+                className={buttonVariants({ variant: "secondary", size: "lg" })}
+              >
+                See events
+              </Link>
+            </div>
+          </div>
+        </section>
 
-          <Card className="mt-8">
+        {/* LIVE BOARD ---------------------------------------------------- */}
+        <section className="mt-10">
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h2 className="font-display text-2xl font-semibold">
+              Tonight&apos;s live board
+            </h2>
+            <span className="text-xs text-moon-dim">
+              {new Intl.DateTimeFormat("en-IN", {
+                weekday: "long",
+                day: "numeric",
+                month: "short",
+                timeZone: "Asia/Kolkata",
+              }).format(new Date())}
+            </span>
+          </div>
+          <Card>
             <CardContent className="p-0">
-              <div className="flex items-center justify-between border-b border-line px-5 py-3">
-                <h2 className="font-display font-semibold">
-                  Live price board
-                </h2>
-                <Badge variant="sodium">
-                  <span
-                    aria-hidden
-                    className="inline-block h-1.5 w-1.5 rounded-full bg-sodium"
-                  />
-                  live
-                </Badge>
-              </div>
               <LiveBoard citySlug={city} initial={board} />
             </CardContent>
           </Card>
         </section>
 
+        {/* CLUB RAIL ----------------------------------------------------- */}
         {clubs.length > 0 && (
-          <section className="py-8">
+          <section className="mt-14">
             <div className="mb-4 flex items-baseline justify-between">
-              <h2 className="font-display text-2xl font-semibold">Tonight</h2>
-              <Link href="/clubs" className="text-sm text-dusk hover:underline">
-                Explore all clubs
+              <h2 className="font-display text-2xl font-semibold">
+                Popular in {cityName}
+              </h2>
+              <Link
+                href="/clubs"
+                className="inline-flex items-center gap-1 text-sm text-plum-bright hover:underline"
+              >
+                All clubs <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {clubs.slice(0, 4).map((club) => (
                 <ClubCard key={club.id} club={club} />
               ))}
@@ -90,17 +132,21 @@ export default async function Home() {
           </section>
         )}
 
+        {/* EVENT RAIL ---------------------------------------------------- */}
         {events.length > 0 && (
-          <section className="py-8">
+          <section className="mt-14">
             <div className="mb-4 flex items-baseline justify-between">
               <h2 className="font-display text-2xl font-semibold">
                 Upcoming events
               </h2>
-              <Link href="/events" className="text-sm text-dusk hover:underline">
-                All events
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-1 text-sm text-plum-bright hover:underline"
+              >
+                All events <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {events.slice(0, 4).map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
@@ -108,34 +154,38 @@ export default async function Home() {
           </section>
         )}
 
-        <section className="border-t border-line py-12">
+        {/* HOW IT WORKS -------------------------------------------------- */}
+        <section className="mt-16 rounded-xl border border-line bg-night-raised/70 px-6 py-10">
           <h2 className="font-display text-2xl font-semibold">How it works</h2>
           <ol className="mt-6 grid gap-6 sm:grid-cols-3">
-            <li>
-              <h3 className="font-medium">1. Watch the board</h3>
-              <p className="mt-1 text-sm text-moon-dim">
-                Prices are set by the clubs and update the second they change.
-              </p>
-            </li>
-            <li>
-              <h3 className="font-medium">2. Lock your price</h3>
-              <p className="mt-1 text-sm text-moon-dim">
-                Start checkout and your price is held for 10 minutes, whatever
-                the board does.
-              </p>
-            </li>
-            <li>
-              <h3 className="font-medium">3. Walk in with a QR</h3>
-              <p className="mt-1 text-sm text-moon-dim">
-                Your ticket is a QR code scanned at the door. No printouts.
-              </p>
-            </li>
+            <HowStep
+              icon={<Zap className="h-5 w-5" />}
+              step="1"
+              title="Watch the board"
+              body="Prices are set by the clubs and update the second they change."
+            />
+            <HowStep
+              icon={<Lock className="h-5 w-5" />}
+              step="2"
+              title="Lock your price"
+              body="Start checkout and your price is held for 10 minutes, whatever the board does."
+            />
+            <HowStep
+              icon={<QrCode className="h-5 w-5" />}
+              step="3"
+              title="Walk in with a QR"
+              body="Your ticket is a QR code scanned at the door. No printouts."
+            />
           </ol>
         </section>
 
-        <section className="mb-12 rounded-lg border border-line bg-aubergine/60 px-6 py-10 text-center">
-          <h2 className="font-display text-2xl font-semibold">Run a club?</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-moon-dim">
+        {/* PARTNER CTA --------------------------------------------------- */}
+        <section className="my-16 overflow-hidden rounded-xl border border-plum/30 bg-gradient-to-br from-plum-wash to-aubergine px-6 py-10 text-center sm:px-10">
+          <Badge variant="sodium" className="mb-3">For clubs</Badge>
+          <h2 className="font-display text-2xl font-semibold sm:text-3xl">
+            Fill the room at the right price — every night.
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-moon-dim">
             Set your own prices, publish events, manage tables and check guests
             in — with payouts straight to your account.
           </p>
@@ -145,11 +195,38 @@ export default async function Home() {
               buttonVariants({ variant: "primary", size: "lg" }) + " mt-6"
             }
           >
-            Partner with ThirtyML
+            Partner with ThirtyML <ArrowRight className="h-4 w-4" />
           </Link>
         </section>
       </main>
       <Footer />
     </>
+  );
+}
+
+function HowStep({
+  icon,
+  step,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <li>
+      <div className="flex items-center gap-2 text-plum-bright">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-plum/20">
+          {icon}
+        </span>
+        <span className="text-xs font-medium uppercase tracking-widest text-moon-dim">
+          Step {step}
+        </span>
+      </div>
+      <h3 className="mt-3 font-display text-lg font-semibold">{title}</h3>
+      <p className="mt-1 text-sm text-moon-dim">{body}</p>
+    </li>
   );
 }

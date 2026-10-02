@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 import type { EventSummary } from "@/lib/data/types";
 import { clubGradient } from "./club-card";
 import { formatPaise } from "@/lib/utils";
@@ -20,25 +22,46 @@ export function EventCard({ event }: { event: EventSummary }) {
   return (
     <Link
       href={`/${event.citySlug}/events/${event.slug}`}
-      className="group overflow-hidden rounded-md border border-line bg-night-raised transition-colors hover:border-moon-dim"
+      className="card-lift group block overflow-hidden rounded-lg border border-line bg-night-raised"
     >
-      <div
-        aria-hidden
-        className="flex h-36 items-end p-3"
-        style={{ background: clubGradient(event.slug) }}
-      >
-        <span className="rounded-sm bg-night/80 px-2 py-1 text-xs">
-          {dateFmt.format(starts)} · {timeFmt.format(starts)}
-        </span>
+      <div className="relative aspect-[3/2] overflow-hidden">
+        {event.posterPath ? (
+          <Image
+            src={event.posterPath}
+            alt={event.name}
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{ background: clubGradient(event.slug) }}
+          />
+        )}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-t from-night via-night/40 to-transparent"
+        />
+        <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-night/80 px-2 py-1 text-xs text-moon backdrop-blur">
+          <Calendar className="h-3 w-3 text-plum-bright" aria-hidden />
+          <span>
+            {dateFmt.format(starts)} · {timeFmt.format(starts)}
+          </span>
+        </div>
       </div>
       <div className="p-4">
-        <h3 className="font-display font-semibold leading-tight">
+        <h3 className="font-display text-base font-semibold leading-tight text-moon group-hover:text-plum-bright">
           {event.name}
         </h3>
-        <p className="mt-0.5 text-xs text-moon-dim">{event.clubName}</p>
+        <p className="mt-1 text-xs text-moon-dim">{event.clubName}</p>
         {event.minPrice !== null && (
-          <p className="tnum mt-2 font-display text-sm font-semibold text-sodium">
-            from {formatPaise(event.minPrice)}
+          <p className="tnum mt-2 text-sm">
+            <span className="text-moon-dim">from </span>
+            <span className="font-display font-semibold text-plum-bright">
+              {formatPaise(event.minPrice)}
+            </span>
           </p>
         )}
       </div>

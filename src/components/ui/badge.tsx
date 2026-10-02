@@ -7,8 +7,8 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-night-raised border border-line text-moon-dim",
-        sodium: "bg-sodium/15 text-sodium",
+        default: "bg-night-raised/80 border border-line text-moon-dim",
+        sodium: "bg-plum/20 text-plum-bright border border-plum/30",
         dusk: "bg-dusk/15 text-dusk",
         drop: "bg-drop/15 text-drop",
         rise: "bg-rise/15 text-rise",

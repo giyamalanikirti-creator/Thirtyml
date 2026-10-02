@@ -8,18 +8,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "bg-sodium text-night hover:bg-sodium-deep active:bg-sodium-deep",
+          "bg-plum text-moon shadow-sm shadow-plum/30 hover:bg-plum-deep active:bg-plum-deep",
         secondary:
-          "bg-night-raised text-moon border border-line hover:border-moon-dim",
+          "bg-night-raised text-moon border border-line hover:border-plum-bright hover:text-plum-bright",
         ghost: "text-moon hover:bg-night-raised",
         danger: "bg-danger text-moon hover:opacity-90",
-        link: "text-dusk underline-offset-4 hover:underline p-0 h-auto",
+        link: "text-plum-bright underline-offset-4 hover:underline p-0 h-auto",
       },
       size: {
-        sm: "h-8 px-3 text-sm",
+        sm: "h-9 px-3 text-sm",
         md: "h-10 px-4 text-sm",
         lg: "h-12 px-6 text-base",
-        // Check-in screen and dark-club contexts: huge touch targets
         xl: "h-16 px-8 text-lg",
       },
     },

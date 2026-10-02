@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/shell/header";
 import { Footer } from "@/components/shell/footer";
@@ -100,11 +101,14 @@ export default async function EventPage({
           {event.name}
         </nav>
 
-        <div
-          aria-hidden
-          className="mt-4 h-56 rounded-lg sm:h-72"
-          style={{ background: clubGradient(event.slug) }}
-        />
+        <div className="relative mt-4 h-56 overflow-hidden rounded-xl sm:h-80">
+          {event.posterPath ? (
+            <Image src={event.posterPath} alt={event.name} fill priority sizes="(min-width: 1024px) 72rem, 100vw" className="object-cover" />
+          ) : (
+            <div aria-hidden className="absolute inset-0" style={{ background: clubGradient(event.slug) }} />
+          )}
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-night via-night/40 to-transparent" />
+        </div>
 
         <div className="mt-6 flex flex-col gap-8 lg:flex-row">
           <div className="min-w-0 flex-1">
