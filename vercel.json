@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/jobs?task=expire-holds", "schedule": "* * * * *" },
-    { "path": "/api/jobs?task=notifications", "schedule": "* * * * *" },
-    { "path": "/api/jobs?task=reconcile", "schedule": "*/15 * * * *" }
+    { "path": "/api/jobs?task=expire-holds", "schedule": "0 3 * * *" },
+    { "path": "/api/jobs?task=notifications", "schedule": "5 3 * * *" },
+    { "path": "/api/jobs?task=reconcile", "schedule": "10 3 * * *" }
   ]
 }
